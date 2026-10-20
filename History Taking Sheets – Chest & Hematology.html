@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>History Taking Sheets – Chest &amp; Hematology</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f8fb;--card:#fff;--tx:#1b2430;--mu:#66758a;--ac:#1f5fa8;--bd:#d5dce6;--chip:#eaf1fa}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171e;--card:#1b222b;--tx:#e8edf3;--mu:#9aa8ba;--ac:#6fa8f0;--bd:#303a47;--chip:#243142}}
+:root[data-theme="dark"]{--bg:#12171e;--card:#1b222b;--tx:#e8edf3;--mu:#9aa8ba;--ac:#6fa8f0;--bd:#303a47;--chip:#243142}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+main{max-width:760px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:10px 0 2px;color:var(--ac)}
+.sub{color:var(--mu);font-size:13px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;padding:4px;background:var(--chip);border:1px solid var(--bd);border-radius:12px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.tabs button{flex:1;padding:10px;background:transparent;color:var(--tx);border-radius:9px}
+.tabs button.on{background:var(--ac);color:#fff}
+details{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin:10px 0;padding:0 12px}
+summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--ac)}
+.f{margin:0 0 12px}
+.f>b{display:block;font-size:14px;margin-bottom:4px}
+.h{color:var(--mu);font-size:12px;margin:-2px 0 4px}
+h3{font-size:14px;margin:14px 0 8px;padding-top:8px;border-top:1px dashed var(--bd);color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+input[type=text],textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:64px;resize:vertical}
+.ch{display:flex;flex-wrap:wrap;gap:6px}
+.ch label{background:var(--chip);border:1px solid var(--bd);border-radius:999px;padding:6px 11px;font-size:14px;cursor:pointer}
+.ch input{display:none}
+.ch label:has(input:checked){background:var(--ac);color:#fff;border-color:var(--ac)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row input{width:90px}
+.bar{position:sticky;bottom:0;display:flex;gap:8px;padding:10px 0 14px;background:linear-gradient(transparent,var(--bg) 30%)}
+button{flex:1;padding:12px;border:0;border-radius:10px;font:600 15px inherit;font-family:inherit;background:var(--ac);color:#fff;cursor:pointer}
+button.s{background:var(--chip);color:var(--tx);border:1px solid var(--bd);flex:0 0 auto}
+#msg{font-size:13px;color:var(--mu);min-height:18px}
+</style></head><body><main>
+<div class="tabs"><button id="t_chest">Chest</button><button id="t_heme">Hematology</button></div>
+<h1 id="ttl"></h1>
+<div class="sub">Tap to fill. Entries auto-save on this device, separately for each sheet. Export the open sheet to Word or PDF.</div>
+<div id="app"></div><div id="msg"></div>
+<div class="bar"><button id="ex">Word (.docx)</button><button id="pf">PDF</button><button class="s" id="cl">Clear</button></div>
+</main>
+<script>
+// t=text a=area r=single c=multi h=subheading P=pack-years ; [type,label,options,hint]
+const CHEST=[
+['Personal history',['t','Name'],['t','Age','','Infancy: CF, bronchiectasis, asthma, leukemia · Middle age: infections, CF, bronchiectasis, asthma · Old age: emphysema, PE, aspiration pneumonia, lung abscess'],['r','Sex','Male;Female','Women: thromboembolism (pregnancy, contraceptives), ILD · Men: occupational, pleural, squamous/small cell cancer'],['t','Occupation','','Mining: silicosis/TB · Asbestos: mesothelioma · Farming: farmer’s lung · Cotton: byssinosis/asthma'],['t','Residence','','Crowded/damp: infections, TB · Polluted towns: lung cancer'],['r','Marital status','Single;Married;Divorced;Widowed'],['a','Deliveries (usual/caesarean), abortions (therapeutic/criminal) and complications','','Females'],['r','Contraceptive pills','Yes;No;N/A'],['r','Infertility','Yes;No;N/A','Males: Kartagener’s syndrome'],
+['h','Habits'],['r','Smoking status','Never;Current;Ex-smoker'],['c','Type of smoking','Cigarettes;Pipe;Hubble bubble;Vaping'],['P'],['t','If stopped: when and why?'],['r','Alcohol','No;Yes','Aspiration, lung abscess, obstructive/central sleep apnoea, hypoventilation'],['t','Alcohol details'],['c','Drug addiction','IV drugs;Opiates;Habitual steroids;Other','IV: AIDS, septic emboli, hepatitis · Opiates: hypoventilation, aspiration, pulmonary oedema · Steroids: TB, muscle wasting']],
+['Complaint',['a','Main complaint (patient’s own words, most distressing symptom)'],['r','Onset','Sudden;Gradual','Sudden: vascular, asthma, pneumothorax, pneumonia · Gradual: fibrosis, neoplasm'],['r','Course','Regressive;Progressive;Stationary;Intermittent','Regressive: inflammatory · Progressive: degenerative/neoplastic · Stationary: post-inflammatory · Intermittent: asthma'],['r','Duration','Short;Long','Short: inflammatory/vascular · Long: fibrosis/neoplasm'],['t','Duration (exact)']],
+['History of present illness',
+['h','A. Cough and expectoration'],['t','Cough duration'],['r','Cough type','Dry;Productive'],['r','Cough pattern','Short;Paroxysmal'],['c','Timing / special character','Morning cough;Wakes patient at night;Brassy cough;Bovine cough;Hoarseness of voice;Stridor','Morning: chronic bronchitis/bronchiectasis · Night: LHF, postnasal drip, hiatus hernia · Brassy: tracheal tumour · Bovine: recurrent laryngeal palsy'],
+['h','Sputum analysis'],['t','Amount','','Large: bronchiectasis, lung abscess, empyema with fistula'],['c','Colour','White;Yellow;Green;Red/blood-streaked;Black;Rusty;Brown (anchovy sauce);Pink;Grey'],['r','Odour','Offensive;Not offensive','Offensive: anaerobic infection'],['c','Aspect','Watery;Viscid;Purulent','Watery: pulmonary oedema/hydatid · Viscid: asthma/bronchitis · Purulent: abscess/bronchiectasis'],['r','Relation to posture','Large amounts on changing posture;None'],
+['h','B. Hemoptysis'],['r','Hemoptysis','Yes;No'],['t','Amount (life-threatening ≈ 150 cc)'],['r','Type','Frank blood;Blood-tinged sputum'],['t','Duration of hemoptysis'],['c','Hemoptysis vs hematemesis features','Cough precedes;Nausea precedes;Bright blood with sputum;Altered blood;Sputum stained for days;Once only;History of chest disease;History of indigestion;Dark stool next day'],
+['h','C. Dyspnoea'],['r','Onset speed','Acute (minutes);Rapid (hours);Gradual (days);Slow (months/years)','Acute: pneumothorax, asthma, oedema, embolism · Rapid: haemothorax, pneumonia · Gradual: effusion, TB, carcinoma · Slow: emphysema, pneumoconiosis'],['c','Type','Exertional;PND;Paroxysmal (asthma);Orthopnea;At rest','Orthopnea DD: ascites, retrosternal goitre, bilateral basal bronchiectasis, bilateral diaphragm paralysis, late pregnancy'],['r','mMRC grade','0 – only strenuous exercise;1 – hurrying / slight hill;2 – slower than peers, stops at own pace;3 – stops after ~100 m;4 – too breathless to leave house / dress'],['a','Associated (frothy sputum, cyanosis, wheeze, tachycardia)'],
+['h','D. Chest pain'],['c','Type','Retrosternal burning;Constrictive retrosternal;Pleural (stitching);Pancoast (inner arm)'],['r','Onset','Acute;Chronic'],['r','Course','Progressive;Stationary;Regressive'],['r','Duration','Minutes;Hours;Days','Minutes: angina · Hours: MI · Days: pleuritic'],['c','Site','Retrosternal;Epigastric;Lower axilla/inframammary;Intercostal space;Other'],['c','Character','Compressing/crushing;Stitching;Burning;Tearing'],['c','Radiation','Right neck / left shoulder / left arm;Along intercostal nerves;Shoulder tip;Anterior abdominal wall;Upper chest / outer arm;Inner upper limb'],['c','Aggravating factors','Swallowing;Exercise/emotion;Head movement;Recumbency;Chest wall pressure;Deep inspiration/cough'],['c','Relieving factors','Rest/nitroglycerine;Antacids;Holding breath;Sitting up'],['c','Associated','Sweating/palpitation;Vomiting/hematemesis'],
+['h','E. Asthmatic attacks'],['t','Time and duration of attacks'],['t','Precipitating factors'],['t','Relieving factors'],['r','Hospital admission needed','Yes;No'],
+['h','F. Mediastinal compression'],['c','Symptoms','Facial edema / puffy eyelids;Dysphagia;Hoarseness of voice'],
+['h','G. Toxic symptoms'],['c','Symptoms','Weight loss;Night fever;Night sweats;Loss of appetite'],
+['h','H. Lower limb edema'],['r','Edema','Yes;No','Cor pulmonale, hypoproteinaemia, nephritic syndrome'],
+['h','I. Other'],['a','Other positive symptoms (e.g. right hypochondrial pain)']],
+['Past history',['r','Similar attacks','Yes;No'],['r','Past tuberculosis','Yes;No'],['t','Sanatorium admission / anti-TB drugs','','Rifampicin turns urine orange'],['t','Previous hospital admissions (cause)'],['t','Previous operations'],['r','Previous blood transfusion','Yes;No'],['r','Sexually transmitted diseases','Yes;No','HIV may stay asymptomatic for years'],['a','Details']],
+['Drug history',['a','Current drugs, doses, duration','','Anticoagulants and steroids are especially important'],['t','Drug allergy'],['t','Self-abuse (analgesics / addictive drugs)']],
+['Family history',['a','Age, health or cause of death of relatives'],['t','Similar disease in family'],['t','Tuberculosis in relatives'],['c','Other family disease','Diabetes;Hypertension;Asthma;Bronchiectasis;Cystic fibrosis;Alpha-1 antitrypsin deficiency']],
+['Psychosocial history',['a','ICE: ideas, concerns, expectations'],['a','Financial and social support'],['c','Closing','Asked if patient has questions;Thanked the patient']],
+['Provisional diagnosis',['t','1. Etiological'],['t','2. Anatomical'],['t','3. Pathological'],['t','4. Functional (compensated or not)'],['t','5. Complications']]
+];
+const HEME=[
+['Personal history',['t','Name'],['t','Age','','Neonatal: haemolytic disease, G6PD · Childhood: ALL, ITP, haemophilia, thalassaemia, sickle cell · Adults: CML, AML, aplastic anaemia, lymphoma · Elderly: CLL, myeloma, MDS'],['r','Sex','Male;Female','Males: haemophilia, G6PD deficiency (X-linked) · Females: iron deficiency (menses, pregnancy), SLE cytopenias'],['t','Occupation','','Benzene/chemicals/pesticides: aplastic anaemia, leukaemia · Radiation: leukaemia · Lead: anaemia'],['t','Residence','','Endemic areas: malaria, schistosomiasis, hookworm; thalassaemia/sickle belts'],['r','Marital status','Single;Married;Divorced;Widowed'],['r','Consanguinity','Yes;No;Unknown','Thalassaemia, hereditary anaemias, haemophilia'],
+['h','Habits and diet'],['r','Smoking status','Never;Current;Ex-smoker','Smoking: secondary polycythaemia'],['P'],['r','Alcohol','No;Yes','Macrocytosis, folate deficiency, marrow suppression, liver coagulopathy'],['t','Alcohol details'],['c','Diet','Vegetarian/vegan;Low meat intake;Excess tea;Excess milk;Fava beans','Vegan: B12 · Low meat/tea/milk: iron · Fava beans: G6PD haemolysis'],['c','Pica','Ice;Clay/soil;Starch;Other','Iron deficiency']],
+['Menstrual and obstetric history (females)',['t','Menarche (age)'],['r','Cycle','Regular;Irregular;N/A'],['t','Duration of period / pads per day'],['r','Menorrhagia','Yes;No;N/A','Iron deficiency, von Willebrand disease, platelet disorders'],['r','Clots / flooding','Yes;No;N/A'],['a','Pregnancies, abortions, postpartum haemorrhage'],['r','Contraceptives','Yes;No;N/A']],
+['Complaint',['a','Main complaint (patient’s own words)'],['r','Onset','Sudden;Gradual','Sudden: bleeding, haemolytic crisis · Gradual: deficiency anaemia, leukaemia, lymphoma'],['r','Course','Progressive;Stationary;Regressive;Intermittent','Intermittent: crises, ITP relapses'],['t','Duration (exact)']],
+['History of present illness',
+['h','A. Anaemic symptoms'],['c','General','Fatigue;Pallor;Dizziness / syncope;Headache;Tinnitus;Palpitation;Exertional dyspnoea;Angina / claudication;Poor concentration;Cold intolerance'],['r','Onset speed','Insidious;Acute (hours–days)','Insidious: iron/B12 deficiency, CKD · Acute: haemolysis, bleeding'],['c','Specific features','Pica;Brittle nails / koilonychia;Sore tongue;Dysphagia;Paraesthesia / numbness;Unsteady gait','Iron deficiency: pica, koilonychia, dysphagia (Plummer-Vinson) · B12: glossitis, neuropathy'],
+['h','B. Bleeding tendency'],['r','Bleeding','Yes;No'],['c','Site','Epistaxis;Gum bleeding;Haematemesis;Melaena;Piles / rectal bleeding;Haematuria;Menorrhagia;Haemoptysis;Joint bleeding (haemarthrosis);Muscle haematoma;Skin bruises;Petechiae / purpura;Intracranial'],['c','Pattern','Spontaneous;After minor trauma;After surgery / dental extraction;After circumcision / umbilical stump','Mucocutaneous + immediate: platelet disorder, VWD · Deep (joints/muscles) + delayed: haemophilia'],['t','Duration and frequency of episodes'],['c','Related drugs','Aspirin / NSAIDs;Anticoagulants;None'],
+['h','C. Haemolysis'],['c','Symptoms','Jaundice;Dark urine;Abdominal pain;Leg ulcers;Bone pain / crisis;Gallstones / biliary colic'],['c','Precipitants','Infection;Drugs;Fava beans;Cold exposure;Transfusion;Pregnancy','Fava/drugs: G6PD · Cold: cold agglutinin · Infection: sickle cell, G6PD'],
+['h','D. Infection and fever'],['r','Recurrent infections','Yes;No','Neutropenia, leukaemia, hypogammaglobulinaemia'],['c','Sites','Sore throat / mouth ulcers;Chest;Urinary;Skin / perianal;Fever without focus'],
+['h','E. Lymph nodes, spleen and liver'],['c','Swellings / symptoms','Neck swelling;Axillary swelling;Groin swelling;Abdominal fullness;Left hypochondrial heaviness;Early satiety;Right hypochondrial pain','Early satiety / left hypochondrial heaviness: splenomegaly · Sudden left hypochondrial pain: splenic infarct'],['r','Pain in swellings','Painless;Painful','Painless rubbery nodes: lymphoma · Alcohol-induced pain: Hodgkin'],['t','Duration and progression'],
+['h','F. Constitutional (B) symptoms'],['c','Symptoms','Fever (>38 °C);Drenching night sweats;Weight loss (>10% in 6 months);Pruritus;Loss of appetite'],
+['h','G. Bone and joint'],['c','Symptoms','Bone pain;Joint pain / swelling;Fractures;Back pain','Myeloma, leukaemia, sickle crisis, haemophilic arthropathy'],
+['h','H. Thrombosis and hyperviscosity'],['c','Symptoms','Limb swelling / pain (DVT);Pleuritic pain / dyspnoea (PE);Stroke / TIA;Abdominal pain (mesenteric / portal thrombosis);Headache;Visual disturbance;Burning hands / feet;Priapism;Recurrent abortions','Polycythaemia, thrombocytosis, thrombophilia, antiphospholipid syndrome'],
+['h','I. Neurological and GI'],['c','Neurological','Paraesthesia;Weakness;Ataxia;Memory change','Vitamin B12 deficiency'],['c','GI','Dyspepsia;Chronic diarrhoea;Worm infestation;Bleeding piles;Dark stool;Weight loss'],
+['h','J. Other'],['a','Other positive symptoms']],
+['Past history',['r','Similar attacks','Yes;No'],['r','Previous blood transfusion','Yes;No','Alloimmunisation, iron overload, viral hepatitis / HIV risk'],['t','If yes: number, frequency, reactions'],['r','Splenectomy','Yes;No'],['t','Previous hospital admissions (cause)'],['t','Previous operations / dental extractions (any bleeding?)'],['c','Chronic disease / infection','Renal disease;Liver disease;Rheumatoid / SLE;Thyroid disease;Peptic ulcer / H. pylori;Gastrectomy / bariatric surgery;Inflammatory bowel disease;Malaria;Schistosomiasis;Hepatitis B / C;HIV;TB'],['c','Previous treatment','Chemotherapy;Radiotherapy;Iron therapy;Hydroxyurea;Steroids;Folic acid / B12']],
+['Drug history',['a','Current drugs, doses, duration'],['c','Drugs affecting blood','Aspirin / NSAIDs;Warfarin;Heparin / DOACs;Clopidogrel;Chloramphenicol;Sulfonamides;Methyldopa;Antiepileptics;Carbimazole;Chemotherapy;Primaquine','Marrow suppression: chloramphenicol, sulfonamides, antiepileptics, carbimazole · Haemolysis: methyldopa, primaquine, sulfonamides (G6PD)'],['t','Drug allergy'],['t','Self-abuse (analgesics / addictive drugs)']],
+['Family history',['r','Similar illness in family','Yes;No'],['c','Family history of','Thalassaemia / sickle trait;G6PD deficiency;Haemophilia / bleeding disorder;Early deaths / stillbirths;Splenectomy / gallstones / jaundice;Leukaemia / lymphoma;Thrombosis;Anaemia;Consanguineous parents'],['a','Affected relatives and their relation','','X-linked (haemophilia, G6PD): affected maternal uncles / brothers'],['c','Other family disease','Diabetes;Hypertension;Renal disease;Liver disease']],
+['Psychosocial history',['a','ICE: ideas, concerns, expectations'],['a','Financial and social support'],['c','Closing','Asked if patient has questions;Thanked the patient']],
+['Provisional diagnosis',['t','1. Etiological'],['t','2. Anatomical'],['t','3. Pathological'],['t','4. Functional (compensated or not)'],['t','5. Complications']]
+];
+const SH={chest:{title:'Respiratory History Taking Sheet',S:CHEST,key:'hx',file:'Chest'},heme:{title:'Hematology History Taking Sheet',S:HEME,key:'hx_h',file:'Hematology'}};
+const $=id=>document.getElementById(id);let V={},cur='chest';
+try{const c=localStorage.getItem('hx_cur');if(SH[c])cur=c}catch(e){}
+const save=()=>{try{localStorage.setItem(SH[cur].key,JSON.stringify(V))}catch(e){}};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function build(){const S=SH[cur].S;
+try{V=JSON.parse(localStorage.getItem(SH[cur].key)||'{}')}catch(e){V={}}
+$('ttl').textContent=SH[cur].title;document.title=SH[cur].title;
+$('t_chest').className=cur=='chest'?'on':'';$('t_heme').className=cur=='heme'?'on':'';
+let h='';S.forEach((s,si)=>{h+=`<details${si<2?' open':''}><summary>${s[0]}</summary>`;
+s.slice(1).forEach((f,fi)=>{const k=si+'.'+fi,[t,l,o,hint]=f;
+if(t=='h'){h+=`<h3>${esc(l)}</h3>`;return}
+if(t=='P'){h+=`<div class="f"><b>Pack-year index</b><div class="h">Packs per day × years</div><div class="row"><input type="text" inputmode="decimal" data-k="ppd" placeholder="packs/day"> × <input type="text" inputmode="decimal" data-k="yrs" placeholder="years"> = <b id="py">—</b></div></div>`;return}
+h+=`<div class="f"><b>${esc(l)}</b>${hint?`<div class="h">${esc(hint)}</div>`:''}`;
+if(t=='t')h+=`<input type="text" data-k="${k}">`;
+else if(t=='a')h+=`<textarea data-k="${k}"></textarea>`;
+else h+=`<div class="ch">`+o.split(';').map(x=>`<label><input type="${t=='r'?'radio':'checkbox'}" name="${k}" data-k="${k}" value="${esc(x)}">${esc(x)}</label>`).join('')+`</div>`;
+h+='</div>'});h+='</details>'});
+$('app').innerHTML=h;$('msg').textContent='';
+document.querySelectorAll('[data-k]').forEach(e=>{const k=e.dataset.k,v=V[k];
+if(e.type=='checkbox')e.checked=Array.isArray(v)&&v.includes(e.value);
+else if(e.type=='radio')e.checked=v===e.value;
+else if(v)e.value=v;
+e.addEventListener(e.type=='text'||e.tagName=='TEXTAREA'?'input':'change',()=>{
+if(e.type=='checkbox'){V[k]=[...document.querySelectorAll(`input[type=checkbox][data-k="${k}"]:checked`)].map(x=>x.value)}
+else V[k]=e.value;
+py();save()})});py()}
+function pyv(){const a=parseFloat(V.ppd),b=parseFloat(V.yrs);return a>=0&&b>=0?(Math.round(a*b*10)/10):''}
+function py(){const e=$('py');if(e)e.textContent=pyv()===''?'—':pyv()+' pack-years'}
+function sw(c){cur=c;try{localStorage.setItem('hx_cur',c)}catch(e){}build();window.scrollTo(0,0)}
+$('t_chest').onclick=()=>sw('chest');$('t_heme').onclick=()=>sw('heme');
+build();
+// ---- shared export model ----
+function items(){const r=[];SH[cur].S.forEach((s,si)=>{r.push({t:'sec',l:s[0]});
+s.slice(1).forEach((f,fi)=>{const k=si+'.'+fi,[t,l]=f;
+if(t=='h'){r.push({t:'sub',l});return}
+if(t=='P'){const p=pyv();r.push({t:'f',l:'Pack-year index',v:p===''?'':p+' pack-years ('+V.ppd+' packs/day × '+V.yrs+' years)'});return}
+let v=V[k];if(Array.isArray(v))v=v.join(', ');r.push({t:'f',l,v:v&&String(v).trim()?String(v):''})})});return r}
+const fname=()=>SH[cur].file+'_History_'+((V['0.0']||'patient').trim().replace(/[^\w\u0600-\u06FF-]+/g,'_')||'patient');
+// ---- Word ----
+const X=s=>esc(s).replace(/\n/g,'</w:t><w:br/><w:t xml:space="preserve">');
+const run=(t,b,c,sz)=>`<w:r><w:rPr>${b?'<w:b/>':''}${c?`<w:color w:val="${c}"/>`:''}${sz?`<w:sz w:val="${sz}"/>`:''}</w:rPr><w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+const para=(r,sp)=>`<w:p><w:pPr><w:spacing w:before="${sp||0}" w:after="80"/></w:pPr>${r}</w:p>`;
+function docx(){let b=para(run(SH[cur].title,1,'1F5FA8',34))+para(run('Date: ',1)+run(new Date().toLocaleDateString()));
+items().forEach(i=>{if(i.t=='sec')b+=para(run(i.l,1,'1F5FA8',28),240);else if(i.t=='sub')b+=para(run(i.l,1,'555555',24),120);else b+=para(run(i.l+': ',1)+run(i.v||'________'))});
+return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`}
+async function dl(make,ext){const m=$('msg');
+try{const d=await claude.use('downloads');
+if(!d){m.textContent='Saving files isn’t available in this view. Open the published link in Claude to export.';return}
+const blob=await make();await d.save({filename:fname()+ext,data:blob});m.textContent='Saved.'
+}catch(e){m.textContent=e&&e.code=='declined'?'Export cancelled.':'Export failed: '+((e&&e.message)||'unknown error')}}
+$('ex').onclick=()=>dl(async()=>{const z=new JSZip();
+z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+z.file('word/document.xml',docx());return z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})},'.docx');
+// ---- PDF (standard Latin font; Arabic entries show as ? — use Word for those) ----
+const pt=s=>String(s).replace(/≈/g,'~').replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/→/g,'->').replace(/[^\u0000-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022]/g,'?');
+$('pf').onclick=()=>dl(async()=>{const {jsPDF}=window.jspdf;const d=new jsPDF({unit:'pt',format:'a4'});
+const W=595,M=42,mw=W-2*M,H=842;let y=M;
+const need=n=>{if(y+n>H-M){d.addPage();y=M}};
+d.setFont('helvetica','bold');d.setFontSize(17);d.setTextColor(31,95,168);d.text(pt(SH[cur].title),M,y+12);y+=26;
+d.setFontSize(10);d.setTextColor(0);d.text('Date: '+new Date().toLocaleDateString(),M,y);y+=10;
+items().forEach(i=>{
+if(i.t=='sec'){need(40);y+=14;d.setFont('helvetica','bold');d.setFontSize(13);d.setTextColor(31,95,168);d.text(pt(i.l),M,y);y+=4;d.setDrawColor(31,95,168);d.line(M,y,W-M,y);y+=14}
+else if(i.t=='sub'){need(30);y+=6;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(85);d.text(pt(i.l),M,y);y+=14}
+else{d.setFontSize(10);d.setTextColor(0);
+const lab=pt(i.l)+': ';d.setFont('helvetica','bold');const lw=d.getTextWidth(lab);
+d.setFont('helvetica','normal');
+const lines=d.splitTextToSize(pt(i.v||'________'),Math.max(mw-lw,120));
+if(lw>mw*0.55){const ll=d.splitTextToSize(pt(i.l)+':',mw);need((ll.length+lines.length)*13+4);d.setFont('helvetica','bold');d.text(ll,M,y);y+=ll.length*13;d.setFont('helvetica','normal');d.text(d.splitTextToSize(pt(i.v||'________'),mw),M,y);y+=lines.length*13+4}
+else{need(lines.length*13+4);d.setFont('helvetica','bold');d.text(lab,M,y);d.setFont('helvetica','normal');d.text(lines,M+lw,y);y+=lines.length*13+4}}});
+return d.output('blob')},'.pdf');
+let armed=0;$('cl').onclick=()=>{if(!armed){armed=1;$('cl').textContent='Tap again';setTimeout(()=>{armed=0;$('cl').textContent='Clear'},3000);return}
+V={};save();armed=0;$('cl').textContent='Clear';build()};
+</script></body></html>
